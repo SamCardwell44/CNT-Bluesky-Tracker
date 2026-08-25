@@ -38,8 +38,7 @@ jobs:
 
       - name: Run Bluesky metrics script
         env:
-          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
-          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+          BLUESKY_AUTH_CODE: ${{ secrets.BLUESKY_AUTH_CODE }}
         run: |
           Rscript github_process.R
 
