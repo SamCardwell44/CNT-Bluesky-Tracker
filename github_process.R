@@ -151,8 +151,11 @@ update_data <- function(daily_data, filename = "bluesky_metrics"){
     
     return(baseline_row)
   } 
+  
+  existing_data <- read.csv(filepath, stringsAsFactors = FALSE)
+  
   #for followers, likes, reposts, quotes, bookmarks, set the value to the difference from the previous row
-  followers <- unique(daily_data$followers$actor_handle)
+  followers <- daily_data$followers
   new_followers <- daily_data$follower_count - tail(existing_data$follower_count, 1)
   
   new_replies <- daily_data$replies - tail(existing_data$replies, 1)
@@ -168,15 +171,30 @@ update_data <- function(daily_data, filename = "bluesky_metrics"){
   new_mentions <- daily_data$mentions
   mentioned_by <- daily_data$mentioned_by
   
+  #set empty mentioned by to NA
+  if (mentioned_by == "") {
+    mentioned_by <- NA
+  }
+  
   
   #get the new followers that were not in the previous followers row
-  new_followers <- setdiff(daily_data$followers, strsplit(tail(existing_data$followers, 1), ", ")[[1]])
+  previous_followers <- ifelse(
+    is.na(tail(existing_data$followers, 1)),
+    "",
+    as.character(tail(existing_data$followers, 1))
+  )
+  
+  new_followers <- setdiff(
+    strsplit(daily_data$followers, ", ")[[1]],
+    strsplit(previous_followers, ", ")[[1]]
+  )
   #get notable follower list by looping through new followers and getting their follower count
   notable_followers <- c()
   for (follower in new_followers) {
-    follower_info <- get_followers(handle = follower, limitnum = 10000)
-    if (!is.null(follower_info) && !is.na(follower_info$follower_count) && follower_info$follower_count > 200) {
-      notable_followers <- c(notable_followers, paste(follower, "(", follower_info$follower_count, ")", sep = ""))
+    follower_info <- get_followers(follower, 1000)
+    follower_count <- nrow(follower_info)
+    if (!is.null(follower_info) && !is.na(follower_count) && follower_count > 100) {
+      notable_followers <- c(notable_followers, paste(follower, "(", follower_count, ")", sep = ""))
     }
   }
   
@@ -197,11 +215,19 @@ update_data <- function(daily_data, filename = "bluesky_metrics"){
     mentioned_by = mentioned_by
   )
   
-  #add to existing data
-  updated_data <- rbind(existing_data, new_row)
+  #if today's date already exists, overwrite that row
+  existing_date <- which(existing_data$date == current_date)
+  
+  if (length(existing_date) > 0) {
+    cat("Overwriting today's data \n")
+    existing_data[existing_date, ] <- new_row
+  } else {
+    cat("Creating new row \n")
+    existing_data <- rbind(existing_data, new_row)
+  }
   
   #write csv
-  write.csv(updated_data, paste0(filename, ".csv"), row.names = FALSE) 
+  write.csv(existing_data, paste0(filename, ".csv"), row.names = FALSE) 
   
   
 }
