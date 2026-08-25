@@ -35,6 +35,7 @@ get_info <- function(handle, limitnum = 10000, previous_data = NULL, retry_limit
       handle <- as.character(handle)
       
       # Get followers
+      cat("Getting followers \n")
       followers <- get_followers(actor = handle, limit = limitnum)
       follower_count <- as.numeric(nrow(followers))
       if (is.na(follower_count)) follower_count <- 0
@@ -44,11 +45,13 @@ get_info <- function(handle, limitnum = 10000, previous_data = NULL, retry_limit
       }
       
       # Get posts
+      cat("Getting posts \n")
       posts <- get_skeets_authored_by(actor = handle, limit = limitnum)
       post_count <- as.numeric(nrow(posts))
       if (is.na(post_count)) post_count <- 0
       
       #engagement columns are reply_count, repost_count, like_count, quote_count, bookmark_count
+      cat("Getting engagement \n")
       replies <- sum(posts$reply_count, na.rm = TRUE)
       reposts <- sum(posts$repost_count, na.rm = TRUE)
       likes <- sum(posts$like_count, na.rm = TRUE)
@@ -56,6 +59,7 @@ get_info <- function(handle, limitnum = 10000, previous_data = NULL, retry_limit
       bookmarks <- sum(posts$bookmark_count, na.rm = TRUE)
       
       #mentions of CNT, Climate News Tracker, @climatenewstracker.org
+      cat("Getting mentions \n")
       mentions <- dplyr::bind_rows(search_post(q= '@climatenewstracker.org', limit = 500), 
                                    search_post( q= '"Climate News Tracker"', limit = 500)) |> 
         dplyr::distinct() |>
@@ -114,7 +118,7 @@ get_info <- function(handle, limitnum = 10000, previous_data = NULL, retry_limit
 }
 
 daily_data <- get_info(handle = "climatenewstracker.org", limitnum = 1000)
-
+cat("Info gathered \n")
 #update the spreadsheet which has one row for each day, and then all the metrics as columns (If it does not exist create it)
 update_data <- function(daily_data, filename = "bluesky_metrics"){
   current_date <- as.character(Sys.Date())
@@ -153,7 +157,7 @@ update_data <- function(daily_data, filename = "bluesky_metrics"){
   } 
   
   existing_data <- read.csv(filepath, stringsAsFactors = FALSE)
-  
+  cat("Calculating data difference \n")
   #for followers, likes, reposts, quotes, bookmarks, set the value to the difference from the previous row
   followers <- daily_data$followers
   new_followers <- daily_data$follower_count - tail(existing_data$follower_count, 1)
@@ -190,6 +194,7 @@ update_data <- function(daily_data, filename = "bluesky_metrics"){
   )
   #get notable follower list by looping through new followers and getting their follower count
   notable_followers <- c()
+  cat("Calculating notable followers \n")
   for (follower in new_followers) {
     follower_info <- get_followers(follower, 1000)
     follower_count <- nrow(follower_info)
@@ -199,6 +204,7 @@ update_data <- function(daily_data, filename = "bluesky_metrics"){
   }
   
   #write all this to a new row
+  cat("Writing data \n")
   new_row <- data.frame(
     date = current_date,
     followers = followers,
@@ -232,3 +238,4 @@ update_data <- function(daily_data, filename = "bluesky_metrics"){
   
 }
 update_data(daily_data, filename = "bluesky_metrics")
+cat("Process complete \n")
