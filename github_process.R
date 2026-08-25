@@ -20,11 +20,11 @@ load_packages <- function(){
 #install_packages()
 load_packages()
 
-
+auth_code <- Sys.getenv("BLUESKY_AUTH_CODE")
 
 
 #use main account for auth
-auth("climatenewstracker.org", "cmvm-hkaq-lfy6-wblg", overwrite = TRUE)
+auth("climatenewstracker.org", auth_code, overwrite = TRUE)
 
 
 get_info <- function(handle, limitnum = 10000, previous_data = NULL, retry_limit = 3, delay_sec = 5) {
