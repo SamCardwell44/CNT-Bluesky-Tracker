@@ -2,8 +2,8 @@ name: Daily Bluesky Metrics
 
 on:
   schedule:
-    # 22:50 UTC = 23:45 UK time during BST - Not midnight as it can take time to run
-    - cron: "50 22 * * *"
+    # Time in UTC. Earlier than midnight as scheduled can add delay
+    - cron: "40 23 * * *"
 
   # Can run manually
   workflow_dispatch:
